@@ -1,10 +1,11 @@
 import tkinter
-from tkinter import ttk , messagebox
+from tkinter import ttk, messagebox
 from datetime import date
 import customtkinter as ctk
 from PIL import Image
 
-from utils import error , add_graphs
+from utils import error, add_graphs
+
 
 class Menu():
     """Represents a menu for the inventory management system."""
@@ -15,7 +16,7 @@ class Menu():
         ctk.set_appearance_mode("dark")
         # ctk.deactivate_automatic_dpi_awareness()
         self.login_win = login_win
-        self.window =  ctk.CTkToplevel(self.login_win)
+        self.window = ctk.CTkToplevel(self.login_win)
         self.window.protocol("WM_DELETE_WINDOW", exit)
         self.con = con
         self.cur = con.cursor()
@@ -52,16 +53,17 @@ class Menu():
 
         # Add buttons for different sections in the side panel
         if self.user[2] == 'ADMIN':
-            sections = ["dashboard", "inventory", "orders", "users","logout"]
+            sections = ["dashboard", "inventory", "orders", "users", "logout"]
         else:
-            sections = ["dashboard", "inventory", "shop", "history","logout"]
+            sections = ["dashboard", "inventory", "shop", "history", "logout"]
 
         for section in sections:
-            img = ctk.CTkImage(Image.open(f"./imgs/{section}.png").resize((30,30)),size=(30,30))
-            button = ctk.CTkButton(side_panel, text=section.title(), image= img, anchor="w", font=(self.font, 18),fg_color="transparent", hover_color="#212121", command=section_functions[section])
-            button.pack(padx=50,pady=50)
+            img = ctk.CTkImage(Image.open(f"./imgs/{section}.png").resize((30, 30)), size=(30, 30))
+            button = ctk.CTkButton(side_panel, text=section.title(), image=img, anchor="w", font=(self.font, 18),
+                                   fg_color="transparent", hover_color="#212121", command=section_functions[section])
+            button.pack(padx=50, pady=50)
 
-        self.frame = ctk.CTkFrame(self.window, corner_radius=0 ,fg_color="#1a1a1a")
+        self.frame = ctk.CTkFrame(self.window, corner_radius=0, fg_color="#1a1a1a")
         self.frame.pack(fill="both", expand=True)
         self.dashboard()
 
@@ -73,13 +75,13 @@ class Menu():
         """
         try:
             self.frame.forget()
-            self.frame = ctk.CTkFrame(self.window, corner_radius=0 ,fg_color="#1a1a1a")
+            self.frame = ctk.CTkFrame(self.window, corner_radius=0, fg_color="#1a1a1a")
             self.frame.pack(fill="both", expand=True)
 
         except:
             pass
         self.window.title(title)
-        heading = ctk.CTkLabel(self.frame, text=title, anchor="center", font=(self.font, 33) )
+        heading = ctk.CTkLabel(self.frame, text=title, anchor="center", font=(self.font, 33))
         heading.pack()
 
     def dashboard(self):
@@ -93,18 +95,18 @@ class Menu():
         self.cur.execute("SELECT COUNT(*) FROM products;")
         items = self.cur.fetchall()[0]
 
-        header = {"Total Sales Today":sales, "Total Transactions":transactions, "Items in Inventory":items}
+        header = {"Total Sales Today": sales, "Total Transactions": transactions, "Items in Inventory": items}
         for title in header:
             frame = ctk.CTkFrame(master=self.frame, width=300, height=150, corner_radius=15, fg_color="#007fff")
-            frame.place(x=x,y=100)
+            frame.place(x=x, y=100)
 
-            label = ctk.CTkLabel(self.frame, text=header[title], fg_color="#007fff",font=(self.font, 50))
-            label.place(x=x+130,y=130)
+            label = ctk.CTkLabel(self.frame, text=header[title], fg_color="#007fff", font=(self.font, 50))
+            label.place(x=x + 130, y=130)
 
-            text = ctk.CTkLabel(self.frame, text=title, fg_color="#007fff",font=(self.font, 20))
-            text.place(x=x+60,y=220)
+            text = ctk.CTkLabel(self.frame, text=title, fg_color="#007fff", font=(self.font, 20))
+            text.place(x=x + 60, y=220)
 
-            x+=350
+            x += 350
         try:
             add_graphs(self.cur, self.frame)
         except:
@@ -116,9 +118,14 @@ class Menu():
         """ Displays the inventory section of the user interface. """
         self.set_title("Inventory")
         if self.user[2] == 'ADMIN':
-            add_button = ctk.CTkButton(self.frame, width=50, command=self.add_button, text="Add Item",
+            add_button = ctk.CTkButton(self.frame, width=100, command=self.add_button, text="Add Item",
                                        fg_color="#007fff", font=(self.font, 20))
             add_button.place(x=50, y=50)
+
+            # Add delete button next to add button
+            delete_button = ctk.CTkButton(self.frame, width=100, command=self.delete_product, text="Delete Item",
+                                          fg_color="#fb0000", font=(self.font, 20))
+            delete_button.place(x=170, y=50)
         self.make_table(("Product ID", "Product Name", "Description", "Price", "Quantity", "Category"), 130, "products")
 
     def make_table(self, col, width, table=None, height=600):
@@ -165,12 +172,12 @@ class Menu():
     def users(self):
         """ Displays the Users section of the user interface. """
         self.set_title("Users")
-        self.make_table(("Username", "Password", "Account Type"), 170 ,"users")
+        self.make_table(("Username", "Password", "Account Type", "Email"), 170, "users")
 
     def shop(self):
         """ Displays the shop section of the user interface. """
         self.set_title("Shop Items")
-        add_button = ctk.CTkButton(self.frame, width=50, command=self.add_item, text="Add Item to cart",
+        add_button = ctk.CTkButton(self.frame, width=50, command=self.add_item, text="Add Item",
                                    fg_color="#007fff", font=(self.font, 25))
         add_button.place(x=50, y=50)
 
@@ -181,18 +188,16 @@ class Menu():
         label = ctk.CTkLabel(self.frame, text="Total Amount :", font=(self.font, 30))
         label.place(x=700, y=530)
 
-        button = ctk.CTkButton(master=self.frame, width=390, text="Buy Items", corner_radius=6, command=self.buy)
+        button = ctk.CTkButton(master=self.frame, width=390, text="Sell Items", corner_radius=6, command=self.buy)
         button.place(x=700, y=600)
         headings = ("Product Id", "Product Name", "Description", "Price", "Quantity", "Total Amount")
         self.make_table(headings, 130, height=400)
 
-
     def orders(self):
         """ Displays all the Orders placed in the system."""
         self.set_title("Orders")
-        headings = ("Order Id", "Customer", "Date", "Total Items", "Total Amount", "Payment Status")
+        headings = ("Order Id", "User", "Date", "Total Items", "Total Amount", "Payment Status")
         self.make_table(headings, 130, "orders")
-
 
     def history(self):
         """ Displays the order history of the user. """
@@ -204,9 +209,8 @@ JOIN order_items oi ON o.order_id = oi.order_id
 JOIN products p ON oi.product_id = p.product_id
 WHERE o.customer = '{self.user[0]}';
 '''
-        self.make_table(headings,130)
+        self.make_table(headings, 130)
         self.render_table(query=query)
-
 
     def add_item(self):
         """Display another window to add items to cart"""
@@ -219,20 +223,21 @@ WHERE o.customer = '{self.user[0]}';
         self.item_var = ctk.StringVar(value="")
 
         label = ctk.CTkLabel(self.win_frame, text="Select Item :", font=(self.font, 20))
-        label.place(x=50,y=50)
+        label.place(x=50, y=50)
 
         self.cur.execute("SELECT product_name FROM products")
         products = self.cur.fetchall()
-        product_names = [p[0] for p in products  ]
-        combobox = ctk.CTkComboBox(self.win_frame, values=product_names,command=self.fill_labels,variable=self.item_var, width=200)
-        combobox.place(x=250,y=50)
+        product_names = [p[0] for p in products]
+        combobox = ctk.CTkComboBox(self.win_frame, values=product_names, command=self.fill_labels,
+                                   variable=self.item_var, width=200)
+        combobox.place(x=250, y=50)
         labels = ['Available Quantity', 'Unit Price', 'Quantity']
-        x, y = 50,  100
-        self.entries={}
+        x, y = 50, 100
+        self.entries = {}
         for i in labels:
             label = ctk.CTkLabel(self.win_frame, text=f"{i} :", font=(self.font, 20))
-            label.place(x=x,y=y)
-            y+=60
+            label.place(x=x, y=y)
+            y += 60
 
         button = ctk.CTkButton(master=self.win_frame, width=400, text="Add", corner_radius=6, command=self.add_to_cart)
         button.place(x=25, y=340)
@@ -268,62 +273,63 @@ WHERE o.customer = '{self.user[0]}';
             pass
 
         self.quantity_label = ctk.CTkLabel(self.win_frame, text=fetch[0], font=(self.font, 20))
-        self.quantity_label.place(x=x,y=100)
+        self.quantity_label.place(x=x, y=100)
         self.price_label = ctk.CTkLabel(self.win_frame, text=fetch[1], font=(self.font, 20))
-        self.price_label.place(x=x,y=160)
+        self.price_label.place(x=x, y=160)
 
         style = ttk.Style()
         style.configure("TSpinbox", fieldbackground="#343638", foreground="white", background="#343638")
 
         self.spinbox = ttk.Spinbox(self.win_frame, from_=1, to=fetch[0], textvariable=self.spin_var, style="TSpinbox")
-        self.spinbox.place(x=x ,y=345)
+        self.spinbox.place(x=x, y=345)
 
     def add_to_cart(self):
         """ Adds selected items to the shopping cart."""
         try:
             name = self.item_var.get()
             if name == '':
-              error("Select an Item to add")
-              return
+                error("Select an Item to add")
+                return
             qty = self.spin_var.get()
-            if qty <= 0 or self.quantity_label.cget('text')<=0 or self.quantity_label.cget('text')<=qty:
+            if qty <= 0 or self.quantity_label.cget('text') <= 0 or self.quantity_label.cget('text') <= qty:
                 error('Enter a valid Quantity')
                 return
         except:
             return
         self.cur.execute(f"SELECT product_id , description , price from products where product_name='{name}';")
-        p_id , desc , price = self.cur.fetchall()[0]
+        p_id, desc, price = self.cur.fetchall()[0]
 
         self.cur.execute(f"UPDATE products SET quantity = quantity - {qty} WHERE product_id = '{p_id}';")
         self.con.commit()
         self.fill_labels(name)
 
         amount = self.price_label.cget("text") * qty
-        items = [(p_id, name, desc, price ,qty, amount)]
+        items = [(p_id, name, desc, price, qty, amount)]
         self.render_table(items=items)
         self.total()
 
     def total(self):
         """Evaluates the total amount in cart and displays it"""
-        total = round(sum(float(self.tree.item(item, "values")[-1]) for item in self.tree.get_children()),2)
+        total = round(sum(float(self.tree.item(item, "values")[-1]) for item in self.tree.get_children()), 2)
         try:
             self.total_label.place_forget()
         except:
             pass
         self.total_label = ctk.CTkLabel(self.frame, text=total, font=(self.font, 22))
-        self.total_label.place(x=940,y=538)
+        self.total_label.place(x=940, y=538)
 
     # menu.py
     def add_button(self):
         """Creates a new window with entry fields to add a product to the inventory."""
         self.topwin = ctk.CTkToplevel(self.window)
         self.topwin.title("Add item to Inventory")
-        self.topwin.geometry("500x500")
-        frame = ctk.CTkFrame(master=self.topwin, width=450, height=470, corner_radius=15)
+        self.topwin.geometry("500x700")
+        frame = ctk.CTkFrame(master=self.topwin, width=450, height=670, corner_radius=15)
         frame.pack(padx=20, pady=20, fill="both", expand=True)
 
         self.product_entries = {}
-        items = ['Product Id', 'Product Name', 'Description', 'Price', 'Quantity', 'Category']
+        items = ['Product Id', 'Product Name', 'Description', 'Price', 'Quantity', 'Category', 'Restock Level',
+                 'Restock Quantity']
 
         for i in items:
             label = ctk.CTkLabel(frame, text=i, font=(self.font, 14))
@@ -335,7 +341,6 @@ WHERE o.customer = '{self.user[0]}';
         # Place the "Add" button below the entry fields
         button = ctk.CTkButton(master=frame, width=400, text="Add", corner_radius=6, command=self.add_product)
         button.pack(pady=20)  # Use pack for simplicity
-
 
     def buy(self):
         """Function to buy items which are added to cart"""
@@ -354,35 +359,55 @@ WHERE o.customer = '{self.user[0]}';
         self.cur.execute(query)
         rows = self.cur.fetchall()
         count = self.cur.rowcount
-        if count==0:
-            order_id = 1001  #first account no is 1001
+        if count == 0:
+            order_id = 1001  # first account no is 1001
         else:
-            order_id = rows[-1][0]+1
+            order_id = rows[-1][0] + 1
 
         query = 'select order_item_id from order_items;'
         self.cur.execute(query)
         rows = self.cur.fetchall()
         count = self.cur.rowcount
-        if count==0:
-            order_item_id = 1  #first account no is 1
+        if count == 0:
+            order_item_id = 1  # first account no is 1
         else:
             order_item_id = rows[-1][0] + 1
         for item in all_items:
             values = self.tree.item(item, "values")
             product_id = values[0]
-            quantity  = values[-2]
-            price  = values[-1]
-            self.cur.execute(f"INSERT INTO order_items (order_item_id ,order_id, product_id, quantity, price) VALUES ({order_item_id}, {order_id}, '{product_id}',{quantity}, {price})")
+            quantity = values[-2]
+            price = values[-1]
+            self.cur.execute(
+                f"INSERT INTO order_items (order_item_id ,order_id, product_id, quantity, price) VALUES ({order_item_id}, {order_id}, '{product_id}',{quantity}, {price})")
             order_item_id += 1
 
         total_amount = sum(float(self.tree.item(item, "values")[-1]) for item in all_items)
         total_items = len(all_items)
-        self.cur.execute(f"INSERT INTO orders (order_id, customer, date, total_items ,total_amount, payment_status) VALUES ({order_id}, '{self.user[0]}', '{date.today()}', {total_items},{total_amount}, '{payment_status}')")
+        self.cur.execute(
+            f"INSERT INTO orders (order_id, customer, date, total_items ,total_amount, payment_status) VALUES ({order_id}, '{self.user[0]}', '{date.today()}', {total_items},{total_amount}, '{payment_status}')")
 
         self.con.commit()
 
+        # Check if any product needs restocking
+        self.check_and_restock_products()
+
         messagebox.showinfo("Success", "Order placed successfully.")
         self.tree.delete(*self.tree.get_children())
+
+    def check_and_restock_products(self):
+        """Checks if any products need restocking and restocks them if necessary."""
+        self.cur.execute("SELECT product_id, quantity, restock_level, restock_quantity FROM products")
+        products = self.cur.fetchall()
+        for product in products:
+            product_id, current_quantity, restock_level, restock_quantity = product
+            if current_quantity <= restock_level and restock_quantity > 0:
+                self.restock_product(product_id, restock_quantity)
+
+    def restock_product(self, product_id, quantity):
+        """Restocks a product with the specified quantity."""
+        self.cur.execute(f"UPDATE products SET quantity = quantity + {quantity} WHERE product_id = '{product_id}'")
+        self.con.commit()
+        print(f"Restocked {product_id} with {quantity} units")
 
     # menu.py
     def add_product(self):
@@ -393,6 +418,42 @@ WHERE o.customer = '{self.user[0]}';
         p_price = self.product_entries['Price'].get()
         p_qty = self.product_entries['Quantity'].get()
         p_category = self.product_entries['Category'].get()
+        restock_level = self.product_entries['Restock Level'].get()
+        restock_quantity = self.product_entries['Restock Quantity'].get()
+
+        # Validation checks
+        if not p_id.isdigit():
+            error("Product ID must contain only numbers")
+            return
+        if not p_name.isalpha():
+            error("Product Name must contain only characters")
+            return
+        if not p_desc.isalpha():
+            error("Description must contain only characters")
+            return
+        try:
+            float(p_price)
+        except ValueError:
+            error("Price must be a number")
+            return
+        try:
+            int(p_qty)
+        except ValueError:
+            error("Quantity must be a number")
+            return
+        if not p_category.isalpha():
+            error("Category must contain only characters")
+            return
+        try:
+            int(restock_level)
+        except ValueError:
+            error("Restock Level must be a number")
+            return
+        try:
+            int(restock_quantity)
+        except ValueError:
+            error("Restock Quantity must be a number")
+            return
 
         self.cur.execute(f"select * from products where product_id='{p_id}'")
         f = self.cur.fetchall()
@@ -403,13 +464,58 @@ WHERE o.customer = '{self.user[0]}';
                 error("Description should be less than 50 letters")
                 return
             self.cur.execute(
-                f"insert into products values('{p_id}','{p_name}','{p_desc}',{p_price},{p_qty},'{p_category}')")
+                f"insert into products values('{p_id}','{p_name}','{p_desc}',{p_price},{p_qty},'{p_category}', {restock_level}, {restock_quantity})")
             self.con.commit()
             messagebox.showinfo("Item Added!", "Item successfully created!")
             self.topwin.destroy()
             self.tree.delete(*self.tree.get_children())
             self.render_table("products")
-    
+
+    def delete_product(self):
+        """Creates a new window to delete a product from the inventory."""
+        self.delete_win = ctk.CTkToplevel(self.window)
+        self.delete_win.title("Delete Product")
+        self.delete_win.geometry("500x300")
+
+        frame = ctk.CTkFrame(master=self.delete_win, width=480, height=280, corner_radius=15)
+        frame.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
+
+        label = ctk.CTkLabel(frame, text="Select Product to Delete:", font=(self.font, 20))
+        label.pack(pady=(30, 0))
+
+        # Fetch product names from database
+        self.cur.execute("SELECT product_name FROM products")
+        products = self.cur.fetchall()
+        product_names = [p[0] for p in products]
+
+        if not product_names:
+            error("No products found in inventory.")
+            self.delete_win.destroy()
+            return
+
+        # Create dropdown menu
+        self.product_var = ctk.StringVar(value="")
+        combobox = ctk.CTkComboBox(frame, values=product_names, variable=self.product_var, width=300)
+        combobox.pack(pady=(20, 30))
+
+        # Add delete button
+        delete_btn = ctk.CTkButton(frame, width=200, text="Delete", command=self.confirm_delete, fg_color="#fb0000")
+        delete_btn.pack(pady=(0, 20))
+
+    def confirm_delete(self):
+        """Confirms and deletes the selected product from the database."""
+        product_name = self.product_var.get()
+        if not product_name:
+            error("Please select a product to delete.")
+            return
+
+        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete {product_name}?"):
+            self.cur.execute(f"DELETE FROM products WHERE product_name = '{product_name}'")
+            self.con.commit()
+            messagebox.showinfo("Success", f"{product_name} has been deleted from the inventory.")
+            self.delete_win.destroy()  # Close the delete product window
+            self.render_table("products")  # Refresh the inventory table
+
     def logout(self):
         self.login_win.destroy()
         self.logout = True
@@ -455,6 +561,7 @@ WHERE o.customer = '{self.user[0]}';
         self.tree.pack(fill="both", expand=True)
         if table:
             self.render_table(table)
+
     # menu.py
     def render_table(self, table=None, items=None, query=None):
         """Render data from the database table into a Tkinter TreeView.
