@@ -204,11 +204,11 @@ class Menu():
         self.set_title("Transactions History")
         headings = ("Order Id", "Product Name", "Quantity", "Price", "Date", "Payment Status")
         query = f'''SELECT o.order_id , p.product_name, oi.quantity , oi.price , o.date, o.payment_status
-FROM orders o
-JOIN order_items oi ON o.order_id = oi.order_id
-JOIN products p ON oi.product_id = p.product_id
-WHERE o.customer = '{self.user[0]}';
-'''
+        FROM orders o
+        JOIN order_items oi ON o.order_id = oi.order_id
+        JOIN products p ON oi.product_id = p.product_id
+        WHERE o.user = '{self.user[0]}';
+        '''
         self.make_table(headings, 130)
         self.render_table(query=query)
 
@@ -384,7 +384,7 @@ WHERE o.customer = '{self.user[0]}';
         total_amount = sum(float(self.tree.item(item, "values")[-1]) for item in all_items)
         total_items = len(all_items)
         self.cur.execute(
-            f"INSERT INTO orders (order_id, customer, date, total_items ,total_amount, payment_status) VALUES ({order_id}, '{self.user[0]}', '{date.today()}', {total_items},{total_amount}, '{payment_status}')")
+            f"INSERT INTO orders (order_id, user, date, total_items ,total_amount, payment_status) VALUES ({order_id}, '{self.user[0]}', '{date.today()}', {total_items},{total_amount}, '{payment_status}')")
 
         self.con.commit()
 
@@ -510,8 +510,8 @@ WHERE o.customer = '{self.user[0]}';
             self.con.commit()
             messagebox.showinfo("Item Added!", "Item successfully created!")
             self.topwin.destroy()
-            self.tree.delete(*self.tree.get_children())
-            self.render_table("products")
+            self.tree.delete(*self.tree.get_children())  # Clear current table
+            self.render_table("products")  # Refresh table with updated data
 
     def delete_product(self):
         """Creates a new window to delete a product from the inventory."""
@@ -556,7 +556,8 @@ WHERE o.customer = '{self.user[0]}';
             self.con.commit()
             messagebox.showinfo("Success", f"{product_name} has been deleted from the inventory.")
             self.delete_win.destroy()  # Close the delete product window
-            self.render_table("products")  # Refresh the inventory table
+            self.tree.delete(*self.tree.get_children())  # Clear current table
+            self.render_table("products")  # Refresh table with updated data
 
     def logout(self):
         self.login_win.destroy()
@@ -619,22 +620,10 @@ WHERE o.customer = '{self.user[0]}';
         if not items:
             self.cur.execute(f"SELECT * FROM {table};")
             items = self.cur.fetchall()
-        for i in items:
-            # Check if the item already exists in the TreeView (Table)
-            existing_item = None
-            for item in self.tree.get_children():
-                if self.tree.item(item, 'values')[0] == i[0]:  # Assuming the first column is product_id
-                    existing_item = item
-                    break
 
-            if existing_item:
-                # Update the quantity of the existing item
-                current_qty = int(self.tree.item(existing_item, 'values')[4])
-                new_qty = current_qty + i[4]
-                new_total = i[3] * new_qty  # price * qty
-                self.tree.item(existing_item, values=(i[0], i[1], i[2], i[3], new_qty, new_total, i[5]))
-                self.total()
+        # Clear existing items in the tree
+        for item in self.tree.get_children():
+            self.tree.delete(item)
 
-            else:
-                # Insert a new row for the item
-                self.tree.insert('', 'end', values=i)
+        for item in items:
+            self.tree.insert('', 'end', values=item)
