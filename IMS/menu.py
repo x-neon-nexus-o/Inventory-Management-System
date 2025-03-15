@@ -403,11 +403,53 @@ WHERE o.customer = '{self.user[0]}';
             if current_quantity <= restock_level and restock_quantity > 0:
                 self.restock_product(product_id, restock_quantity)
 
+    # In menu.py
+
     def restock_product(self, product_id, quantity):
-        """Restocks a product with the specified quantity."""
+        """Restocks a product with the specified quantity and notifies admin."""
+        # Get current product details before restocking
+        self.cur.execute(
+            f"SELECT product_name, quantity, restock_level FROM products WHERE product_id = '{product_id}'")
+        product = self.cur.fetchone()
+        product_name, current_quantity, restock_level = product
+
+        # Perform the restocking
         self.cur.execute(f"UPDATE products SET quantity = quantity + {quantity} WHERE product_id = '{product_id}'")
         self.con.commit()
+
+        # Calculate new quantity after restocking
+        new_quantity = current_quantity + quantity
+
+        # Show notification to admin
+        message = f"Product Restocked:\n\n"
+        message += f"Product ID: {product_id}\n"
+        message += f"Product Name: {product_name}\n"
+        message += f"Previous Quantity: {current_quantity}\n"
+        message += f"Restocked Quantity: {quantity}\n"
+        message += f"New Quantity: {new_quantity}\n"
+        message += f"Restock Level: {restock_level}"
+
+        messagebox.showinfo("Restock Notification", message)
         print(f"Restocked {product_id} with {quantity} units")
+
+    def check_and_restock_products(self):
+        """Checks if any products need restocking and restocks them if necessary."""
+        self.cur.execute("SELECT product_id, quantity, restock_level, restock_quantity FROM products")
+        products = self.cur.fetchall()
+        restocked_products = []
+
+        for product in products:
+            product_id, current_quantity, restock_level, restock_quantity = product
+            if current_quantity <= restock_level and restock_quantity > 0:
+                restocked_products.append(product_id)
+                self.restock_product(product_id, restock_quantity)
+
+        if restocked_products:
+            # Additional summary notification if multiple products were restocked
+            message = "Multiple products restocked:\n\n"
+            for pid in restocked_products:
+                message += f"Product ID: {pid}\n"
+            messagebox.showinfo("Restock Summary", message)
 
     # menu.py
     def add_product(self):
