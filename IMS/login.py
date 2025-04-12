@@ -33,29 +33,32 @@ class Login:
         self.frame.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 
         self.login_label = ctk.CTkLabel(master=self.frame, text="Log in", font=('Century Gothic', 30))
-        self.login_label.place(x=100, y=45)
+        self.login_label.place(x=120, y=45)
 
-        self.username = ctk.CTkEntry(master=self.frame, width=220,
-                                     placeholder_text='Username')  # CTkEntry is used as to take input
+        self.username = ctk.CTkEntry(master=self.frame, width=220, placeholder_text='Username')
         self.username.place(x=50, y=110)
 
         self.password = ctk.CTkEntry(master=self.frame, width=220, placeholder_text='Password', show="*")
         self.password.place(x=50, y=165)
 
+        # Registration prompt label placed above forgot password link
         self.label_link = ctk.CTkLabel(master=self.frame, text="Not registered as biller? Register It",
                                        font=('Century Gothic', 13))
         self.label_link.place(x=60, y=210)
         self.label_link.bind("<Button-1>", self.register_window)
 
+        # Forgot password link placed below registration prompt
         self.forgot_password_link = ctk.CTkLabel(master=self.frame, text="Forgot Password?",
                                                  font=('Century Gothic', 13))
-        self.forgot_password_link.place(x=160, y=210)
+        self.forgot_password_link.place(x=160, y=235)  # Adjusted y-coordinate to place below registration prompt
         self.forgot_password_link.bind("<Button-1>", lambda e: self.forgot_password())
 
-        # Create Login button
-        button = ctk.CTkButton(master=self.frame, width=220, text="Login", command=self.login, corner_radius=6)
-        button.place(x=50, y=250)
+        # Create Login button and assign to instance variable
+        self.login_button = ctk.CTkButton(master=self.frame, width=220, text="Login", command=self.login,
+                                          corner_radius=6)
+        self.login_button.place(x=50, y=270)  # Adjusted y-coordinate to accommodate label changes
 
+    # In the register_window method, hide the labels
     def register_window(self, event=None):
         """ Function to display register window."""
         self.window.title("Create an account")
@@ -68,8 +71,55 @@ class Login:
         self.email = ctk.CTkEntry(master=self.frame, width=220, placeholder_text='Email')
         self.email.place(x=50, y=220)
 
-        button = ctk.CTkButton(master=self.frame, width=220, text="Continue", command=self.register, corner_radius=6)
-        button.place(x=50, y=275)
+        # Create Continue button and store as instance variable
+        self.continue_button = ctk.CTkButton(master=self.frame, width=220, text="Continue", command=self.register,
+                                             corner_radius=6)
+        self.continue_button.place(x=50, y=275)
+
+        # Hide the login button
+        self.login_button.place_forget()
+
+        # Add Back button
+        self.back_button = ctk.CTkButton(master=self.frame, width=100, text="Back", command=self.show_login_window,
+                                         corner_radius=6)
+        self.back_button.place(x=50, y=320)
+
+        # Hide the registration prompt and forgot password link
+        self.label_link.place_forget()
+        self.forgot_password_link.place_forget()
+
+    # In the show_login_window method, show the labels again
+    def show_login_window(self):
+        """ Function to switch back to login window from register window."""
+        # Clear registration elements
+        try:
+            self.email.place_forget()
+        except:
+            pass
+        try:
+            self.continue_button.place_forget()
+        except:
+            pass
+        try:
+            self.back_button.place_forget()
+        except:
+            pass
+
+        # Show login elements again
+        self.login_label.configure(text="Log in")
+        self.label_link.configure(text="Not registered as biller? Register It")
+        self.label_link.bind("<Button-1>", self.register_window)
+
+        # Show the login button
+        self.login_button.place(x=50, y=250)
+
+        # Show the registration prompt and forgot password link
+        self.label_link.place(x=60, y=210)
+        self.forgot_password_link.place(x=160, y=210)
+
+        # Change window title back to login
+        self.window.title("Sign In")
+        self.window.bind('<Return>', self.login)
 
     def login(self, event=None):
         """Authenticate the user by checking the provided username and password with MySQL. """
