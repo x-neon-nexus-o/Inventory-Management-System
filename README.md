@@ -1,4 +1,4 @@
-#Inventory-Management-System
+# Inventory-Management-System
 
 This project is an **Inventory Management System** designed to help businesses efficiently track their *products*, *process sales*, and *manage customer orders*. It allows users to log in, maintain a detailed inventory, handle transactions, generate professional *invoices*, and visualize key business *performance metrics* through interactive charts and reports.
 
