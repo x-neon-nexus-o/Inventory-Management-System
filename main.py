@@ -27,7 +27,7 @@ class Main:
             self.menu = Menu(self.con, self.login.user, self.login.window)
             self.menu.window.mainloop()
 
-            if self.menu.logout == True:
+            if self.menu._logged_out == True:
                 Main()
 
 if __name__ == "__main__":

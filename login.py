@@ -127,7 +127,7 @@ class Login:
         pwd = self.password.get()
         self.cur.execute(
             "INSERT IGNORE INTO users (username, password, account_type, email) VALUES ('ADMIN', 'ADMIN', 'ADMIN', 'admin@example.com');")
-        self.cur.execute(f"select * from users where username='{uname}' and password='{pwd}' ")
+        self.cur.execute("SELECT * FROM users WHERE username = %s AND password = %s", (uname, pwd))
         f = self.cur.fetchall()
         if f:
             print("└─Logged in as {}".format(uname))
@@ -143,7 +143,7 @@ class Login:
         pwd = self.password.get()
         email = self.email.get()
 
-        self.cur.execute(f"select * from users where username='{uname}'")
+        self.cur.execute("SELECT * FROM users WHERE username = %s", (uname,))
         f = self.cur.fetchall()
         if f:
             error("Username already exist")
@@ -155,7 +155,7 @@ class Login:
                 error("Length of the Username and Password should be less than 20")
                 return
 
-            self.cur.execute(f"insert into users values('{uname}','{pwd}','USER', '{email}')")
+            self.cur.execute("INSERT INTO users VALUES (%s, %s, 'USER', %s)", (uname, pwd, email))
             self.con.commit()
             messagebox.showinfo("Account created", "Your account has been succesfully created!")
             self.window.quit()
@@ -204,10 +204,10 @@ class Login:
             error("Passwords do not match")
             return
 
-        self.cur.execute(f"select * from users where username='{uname}' and email='{email}'")
+        self.cur.execute("SELECT * FROM users WHERE username = %s AND email = %s", (uname, email))
         user = self.cur.fetchone()
         if user:
-            self.cur.execute(f"update users set password='{new_pwd}' where username='{uname}'")
+            self.cur.execute("UPDATE users SET password = %s WHERE username = %s", (new_pwd, uname))
             self.con.commit()
             messagebox.showinfo("Success", "Password reset successfully!")
             self.login_window()

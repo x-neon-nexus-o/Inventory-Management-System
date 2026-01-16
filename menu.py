@@ -32,6 +32,7 @@ class Menu():
         self.cur = con.cursor()
         self.user = user
         self.font = 'Century Gothic'
+        self._logged_out = False
         self.make_window()
 
     def make_window(self):
@@ -257,7 +258,7 @@ class Menu():
         sgst = gst / 2
 
         # Check for duplicate category
-        self.cur.execute(f"SELECT * FROM categories WHERE category_name='{category_name}'")
+        self.cur.execute("SELECT * FROM categories WHERE category_name = %s", (category_name,))
         if self.cur.fetchall():
             error("Category already exists")
             return
@@ -265,7 +266,8 @@ class Menu():
         # Insert into database
         try:
             self.cur.execute(
-                f"INSERT INTO categories (category_name, GST, SGST, CGST) VALUES ('{category_name}', {gst}, {sgst}, {cgst})"
+                "INSERT INTO categories (category_name, GST, SGST, CGST) VALUES (%s, %s, %s, %s)",
+                (category_name, gst, sgst, cgst)
             )
             self.con.commit()
             messagebox.showinfo("Success", f"Category '{category_name}' added successfully!")
@@ -345,14 +347,17 @@ class Menu():
         """ Displays the order history of the user. """
         self.set_title("Transactions History")
         headings = ("Order Id", "Product Name", "Quantity", "Price", "Date", "Payment Status", "Customer Name")
-        query = f'''SELECT o.order_id , p.product_name, oi.quantity , oi.price , o.date, o.payment_status, o.customer_name
+        query = '''SELECT o.order_id , p.product_name, oi.quantity , oi.price , o.date, o.payment_status, o.customer_name
         FROM orders o
         JOIN order_items oi ON o.order_id = oi.order_id
         JOIN products p ON oi.product_id = p.product_id
-        WHERE o.user = '{self.user[0]}';
+        WHERE o.user = %s;
         '''
         self.make_table(headings, 130)
-        self.render_table(query=query)
+        self.cur.execute(query, (self.user[0],))
+        items = self.cur.fetchall()
+        for item in items:
+            self.tree.insert('', 'end', values=item)
 
     def add_item(self):
         """Display another window to add items to cart"""
@@ -452,7 +457,7 @@ class Menu():
             return
 
         # Fetch products for the selected category
-        self.cur.execute(f"SELECT product_name FROM products WHERE category='{category}'")
+        self.cur.execute("SELECT product_name FROM products WHERE category = %s", (category,))
         products = self.cur.fetchall()
         product_names = [product[0] for product in products]
 
@@ -469,7 +474,7 @@ class Menu():
             return
 
         # Fetch product details
-        self.cur.execute(f"SELECT quantity, price FROM products WHERE product_name='{product_name}'")
+        self.cur.execute("SELECT quantity, price FROM products WHERE product_name = %s", (product_name,))
         fetch = self.cur.fetchone()
         if not fetch:
             error("Product details not found")
@@ -493,7 +498,7 @@ class Menu():
 
             p_id = values[0]
             qty = values[4]
-            self.cur.execute(f"UPDATE products SET quantity = quantity + {qty} WHERE product_id = '{p_id}';")
+            self.cur.execute("UPDATE products SET quantity = quantity + %s WHERE product_id = %s", (qty, p_id))
             self.con.commit()
         self.total()
 
@@ -504,7 +509,7 @@ class Menu():
             error("Please select a product")
             return
 
-        self.cur.execute(f"SELECT quantity, price FROM products WHERE product_name='{product_name}';")
+        self.cur.execute("SELECT quantity, price FROM products WHERE product_name = %s", (product_name,))
         fetch = self.cur.fetchall()
         if not fetch:
             error("Product not found")
@@ -570,7 +575,7 @@ class Menu():
                 return
 
             # Fetch product details
-            self.cur.execute(f"SELECT product_id, description, price FROM products WHERE product_name='{product_name}'")
+            self.cur.execute("SELECT product_id, description, price FROM products WHERE product_name = %s", (product_name,))
             product = self.cur.fetchone()
             if not product:
                 error("Product not found")
@@ -735,12 +740,12 @@ class Menu():
         """Restocks a product with the specified quantity and notifies admin."""
         # Get current product details before restocking
         self.cur.execute(
-            f"SELECT product_name, quantity, restock_level FROM products WHERE product_id = '{product_id}'")
+            "SELECT product_name, quantity, restock_level FROM products WHERE product_id = %s", (product_id,))
         product = self.cur.fetchone()
         product_name, current_quantity, restock_level = product
 
         # Perform the restocking
-        self.cur.execute(f"UPDATE products SET quantity = quantity + {quantity} WHERE product_id = '{product_id}'")
+        self.cur.execute("UPDATE products SET quantity = quantity + %s WHERE product_id = %s", (quantity, product_id))
         self.con.commit()
 
         # Calculate new quantity after restocking
@@ -757,25 +762,6 @@ class Menu():
 
         messagebox.showinfo("Restock Notification", message)
         print(f"Restocked {product_id} with {quantity} units")
-
-    def check_and_restock_products(self):
-        """Checks if any products need restocking and restocks them if necessary."""
-        self.cur.execute("SELECT product_id, quantity, restock_level, restock_quantity FROM products")
-        products = self.cur.fetchall()
-        restocked_products = []
-
-        for product in products:
-            product_id, current_quantity, restock_level, restock_quantity = product
-            if current_quantity <= restock_level and restock_quantity > 0:
-                restocked_products.append(product_id)
-                self.restock_product(product_id, restock_quantity)
-
-        if restocked_products:
-            # Additional summary notification if multiple products were restocked
-            message = "Multiple products restocked:\n\n"
-            for pid in restocked_products:
-                message += f"Product ID: {pid}\n"
-            messagebox.showinfo("Restock Summary", message)
 
     # menu.py
     def add_product(self):
@@ -823,7 +809,7 @@ class Menu():
             error("Restock Quantity must be a number")
             return
 
-        self.cur.execute(f"select * from products where product_id='{p_id}'")
+        self.cur.execute("SELECT * FROM products WHERE product_id = %s", (p_id,))
         f = self.cur.fetchall()
         if f:
             error("Product Id already exists")
@@ -832,7 +818,8 @@ class Menu():
                 error("Description should be less than 50 letters")
                 return
             self.cur.execute(
-                f"insert into products values('{p_id}','{p_name}','{p_desc}',{p_price},{p_qty},'{p_category}', {restock_level}, {restock_quantity})"
+                "INSERT INTO products VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (p_id, p_name, p_desc, p_price, p_qty, p_category, restock_level, restock_quantity)
             )
             self.con.commit()
             messagebox.showinfo("Item Added!", "Item successfully created!")
@@ -879,7 +866,7 @@ class Menu():
             return
 
         if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete {product_name}?"):
-            self.cur.execute(f"DELETE FROM products WHERE product_name = '{product_name}'")
+            self.cur.execute("DELETE FROM products WHERE product_name = %s", (product_name,))
             self.con.commit()
             messagebox.showinfo("Success", f"{product_name} has been deleted from the inventory.")
             self.delete_win.destroy()  # Close the delete product window
@@ -939,9 +926,9 @@ class Menu():
             quantity = int(item[4])
 
             # Get tax rates from database
-            self.cur.execute(f"SELECT category FROM products WHERE product_id = '{product_id}'")
+            self.cur.execute("SELECT category FROM products WHERE product_id = %s", (product_id,))
             category = self.cur.fetchone()[0]
-            self.cur.execute(f"SELECT CGST, SGST FROM categories WHERE category_name = '{category}'")
+            self.cur.execute("SELECT CGST, SGST FROM categories WHERE category_name = %s", (category,))
             tax_rates = self.cur.fetchone()
 
             if not tax_rates:
@@ -1030,42 +1017,8 @@ class Menu():
 
     def logout(self):
         self.login_win.destroy()
-        self.logout = True
+        self._logged_out = True
 
-    # menu.py
-    def make_table(self, col, width, table=None, height=400):
-        """Create a tkinter treeview table with specified columns, column widths, and optional data source table."""
-        tableframe = ctk.CTkScrollableFrame(self.frame, width=1000, height=height)
-        tableframe.place(x=1070, y=100, anchor=tkinter.NE)
-        style = ttk.Style()
-        style.theme_use("default")
-        style.configure("Treeview",
-                        background="#2a2d2e",
-                        foreground="white",
-                        rowheight=25,
-                        fieldbackground="#343638",
-                        bordercolor="#343638",
-                        borderwidth=0)
-        style.map('Treeview', background=[('selected', '#007fff')])
-
-        style.configure("Treeview.Heading", background="#565b5e", foreground="white", relief="flat")
-        style.map("Treeview.Heading",
-                  background=[('active', '#3484F0')])
-        self.tree = ttk.Treeview(tableframe, columns=col,
-                                 selectmode="browse", height=100)
-
-        for i, value in enumerate(col):
-            if value == 'Price':
-                w = 300
-            else:
-                w = 0 if i == 0 else width
-            self.tree.column(f'#{i}', stretch=tkinter.NO, minwidth=30, width=w)
-            self.tree.heading(value, text=value, anchor=tkinter.W)
-
-        self.tree.grid(row=1, column=0, sticky="W")
-        self.tree.pack(fill="both", expand=True)
-        if table:
-            self.render_table(table)
 
     def render_table(self, table=None, items=None, query=None):
         """Render data from the database table into a Tkinter TreeView."""
